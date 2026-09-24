@@ -1,0 +1,82 @@
+import { mutation, query } from "./_generated/server";
+import { v } from "convex/values";
+
+export const getStats = query({
+  // args: {},
+  handler: async (ctx) => {
+    const statsDoc = await ctx.db.query("stats").first();
+
+    if (!statsDoc) {
+      return {
+        totalGames: 0,
+        winsX: 0,
+        winsO: 0,
+        draws: 0,
+      };
+    }
+
+    return statsDoc;
+
+    // return {
+    //     totalGames: statsDoc.totalGames,
+    //     winsX: statsDoc.winsX,
+    //     winsO: statsDoc.winsO,
+    //     draws: statsDoc.draws,
+    // }
+  },
+});
+
+export const recordGameResult = mutation({
+  args: {
+    result: v.union(v.literal("X"), v.literal("O"), v.literal("DRAW")),
+  },
+  handler: async (ctx, args) => {
+    const statsDoc = await ctx.db.query("stats").first();
+
+    if (!statsDoc) {
+      await ctx.db.insert("stats", {
+        totalGames: 1,
+        winsX: args.result === "X" ? 1 : 0,
+        winsO: args.result === "O" ? 1 : 0,
+        draws: args.result === "DRAW" ? 1 : 0,
+        updateAt: Date.now(),
+      });
+    } else {
+      await ctx.db.patch(statsDoc._id, {
+        totalGames: statsDoc.totalGames + 1, // ← ВИПРАВЛЕНО
+        winsX: args.result === "X" ? statsDoc.winsX + 1 : statsDoc.winsX,
+        winsO: args.result === "O" ? statsDoc.winsO + 1 : statsDoc.winsO,
+        draws: args.result === "DRAW" ? statsDoc.draws + 1 : statsDoc.draws,
+        updateAt: Date.now(),
+      });
+    }
+
+    return { success: true };
+  },
+});
+
+export const resetStats = mutation({
+  handler: async (ctx) => {
+    const statsDoc = await ctx.db.query("stats").first();
+
+    if (statsDoc) {
+      await ctx.db.patch(statsDoc._id, {
+        totalGames: 0,
+        winsX: 0,
+        winsO: 0,
+        draws: 0,
+        updateAt: Date.now(),
+      });
+    } else {
+      await ctx.db.insert("stats", {
+        totalGames: 0,
+        winsX: 0,
+        winsO: 0,
+        draws: 0,
+        updateAt: Date.now(),
+      });
+    }
+
+    return { success: true };
+  },
+});

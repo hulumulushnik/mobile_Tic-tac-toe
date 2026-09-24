@@ -1,11 +1,17 @@
 import { StyleSheet, Text } from "react-native";
+import AntDesign from "@expo/vector-icons/AntDesign";
 
 interface TitleGameProps {
   title: string;
 }
 
 export function TitleGame({ title }: TitleGameProps) {
-  return <Text style={styles.title}>{title}</Text>;
+  return (
+    <Text style={styles.title}>
+      {title}
+      <AntDesign name="alert" size={24} color="black" />
+    </Text>
+  );
 }
 
 const styles = StyleSheet.create({
